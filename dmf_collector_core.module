@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * @file
+ * Anyrel Collector module functions.
+ */
+
+use DigitalMarketingFramework\Core\Registry\RegistryCollectionInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\dmf_collector_core\ContentModifier\ContentModifierFieldManager;
+use Drupal\dmf_collector_core\Render\ContentModifierPreRender;
+
+/**
+ * Implements hook_entity_build_defaults_alter().
+ *
+ * Attaches a pre-render callback to entities that have content modifier fields.
+ * The callback registers settings and adds data attributes during rendering.
+ *
+ * This hook runs BEFORE EntityViewBuilder sets up its #pre_render callbacks,
+ * ensuring our callback is present when the Renderer processes the array.
+ * Using hook_entity_view_alter() would be too late - it runs inside the
+ * EntityViewBuilder's #pre_render, after the pre-render phase has passed.
+ */
+function dmf_collector_core_entity_build_defaults_alter(array &$build, EntityInterface $entity, string $view_mode): void {
+  // Check if entity has any content modifier field.
+  $hasPageField = $entity->hasField(ContentModifierFieldManager::FIELD_NAME_PAGE);
+  $hasElementField = $entity->hasField(ContentModifierFieldManager::FIELD_NAME_ELEMENT);
+
+  if (!$hasPageField && !$hasElementField) {
+    return;
+  }
+
+  // Attach pre-render callback using trusted callback pattern.
+  $build['#pre_render'][] = [ContentModifierPreRender::class, 'preRenderCallback'];
+}
+
+/**
+ * Implements hook_page_bottom().
+ *
+ * Outputs the global DMF settings JSON block and attaches frontend scripts.
+ * This runs after all content has been rendered, so content modifiers
+ * registered during entity rendering will be included in the output.
+ */
+function dmf_collector_core_page_bottom(array &$page_bottom): void {
+  // Only output on non-admin pages.
+  if (\Drupal::service('router.admin_context')->isAdminRoute()) {
+    return;
+  }
+
+  try {
+    /** @var RegistryCollectionInterface $registryCollection */
+    $registryCollection = \Drupal::service('dmf_core.registry_collection');
+
+    $settings = $registryCollection->getFrontendSettings();
+
+    // Only output if there are settings to render.
+    if (empty($settings)) {
+      return;
+    }
+
+    $page_bottom['dmf_settings'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'script',
+      '#attributes' => [
+        'type' => 'application/json',
+        'data-dmf-selector' => 'dmf-settings-json',
+      ],
+      '#value' => json_encode($settings, JSON_THROW_ON_ERROR),
+      // Attach frontend scripts library (defined in dmf_core).
+      '#attached' => [
+        'library' => [
+          'dmf_core/frontend-scripts',
+        ],
+      ],
+    ];
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('dmf_collector_core')->error(
+      'Error rendering DMF frontend settings: @message',
+      ['@message' => $e->getMessage()]
+    );
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form.
+ *
+ * Moves the page content modifier field to the sidebar (advanced region)
+ * as a collapsible "Content Personalization" section.
+ */
+function dmf_collector_core_form_node_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
+  $fieldName = ContentModifierFieldManager::FIELD_NAME_PAGE;
+
+  // Check if the page content modifier field exists on this form.
+  if (!isset($form[$fieldName])) {
+    return;
+  }
+
+  // Create a details wrapper for the sidebar.
+  $form['dmf_content_personalization'] = [
+    '#type' => 'details',
+    '#title' => t('Content Personalization'),
+    '#group' => 'advanced',
+    '#weight' => 90,
+    '#optional' => TRUE,
+    '#open' => FALSE,
+    '#attributes' => [
+      'class' => ['node-form-dmf-content-personalization'],
+    ],
+  ];
+
+  // Move the field into the container using #group.
+  $form[$fieldName]['#group'] = 'dmf_content_personalization';
+}

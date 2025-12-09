@@ -1,0 +1,50 @@
+services:
+  _defaults:
+    autowire: false
+    autoconfigure: false
+    public: false
+
+  # Collector Registry
+  dmf_collector_core.registry:
+    class: Drupal\dmf_collector_core\Registry\Registry
+    arguments:
+      - '@event_dispatcher'
+
+  # Content Modifier Field Manager
+  dmf_collector_core.content_modifier_field_manager:
+    class: Drupal\dmf_collector_core\ContentModifier\ContentModifierFieldManager
+    arguments:
+      - '@entity_type.manager'
+      - '@entity_type.bundle.info'
+      - '@entity_display.repository'
+    public: true
+
+  # Content Modifier Pre-render Service
+  dmf_collector_core.content_modifier_pre_render:
+    class: Drupal\dmf_collector_core\Render\ContentModifierPreRender
+    arguments:
+      - '@current_route_match'
+    public: true
+
+  # Event Subscribers
+  dmf_collector_core.event_subscriber.registry_collection:
+    class: Drupal\dmf_collector_core\Registry\EventSubscriber\RegistryCollectionEventSubscriber
+    arguments:
+      - '@dmf_collector_core.registry'
+    tags:
+      - { name: event_subscriber }
+    public: true
+
+  dmf_collector_core.event_subscriber.core_registry_update:
+    class: Drupal\dmf_collector_core\Registry\EventSubscriber\CoreRegistryUpdateEventSubscriber
+    arguments:
+      - '@dmf_collector_core.content_modifier_field_manager'
+    tags:
+      - { name: event_subscriber }
+    public: true
+
+  dmf_collector_core.event_subscriber.collector_registry_update:
+    class: Drupal\dmf_collector_core\Registry\EventSubscriber\CollectorRegistryUpdateEventSubscriber
+    tags:
+      - { name: event_subscriber }
+    public: true

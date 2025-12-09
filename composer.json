@@ -1,0 +1,64 @@
+{
+    "name": "digital-marketing-framework/drupal-collector-core",
+    "type": "drupal-module",
+    "description": "Anyrel collector integration for Drupal",
+    "license": "GPL-2.0-or-later",
+    "keywords": [
+        "Drupal",
+        "module",
+        "marketing",
+        "framework",
+        "data",
+        "relay",
+        "collection",
+        "collector"
+    ],
+    "homepage": "https://www.mediatis.de",
+    "authors": [
+        {
+            "email": "info@mediatis.de",
+            "homepage": "https://www.mediatis.de",
+            "name": "Mediatis AG",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "digital-marketing-framework/collector-core": "^3.1",
+        "digital-marketing-framework/drupal-core": "^1.0",
+        "digital-marketing-framework/drupal-template-engine-twig": "^1.0",
+        "drupal/core": "^10 || ^11"
+    },
+    "autoload": {
+        "psr-4": {
+            "Drupal\\dmf_collector_core\\": "src/"
+        }
+    },
+    "config": {
+        "bin-dir": ".Build/bin",
+        "vendor-dir": ".Build/vendor",
+        "allow-plugins": {
+            "composer/installers": true,
+            "drupal/core-composer-scaffold": true,
+            "php-http/discovery": true,
+            "phpstan/extension-installer": true,
+            "tbachert/spi": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "extra": {
+        "installer-name": "dmf_collector_core",
+        "installer-paths": {
+            ".Build/web/core": ["type:drupal-core"],
+            ".Build/web/libraries/{$name}": ["type:drupal-library"],
+            ".Build/web/modules/contrib/{$name}": ["type:drupal-module"],
+            ".Build/web/profiles/contrib/{$name}": ["type:drupal-profile"],
+            ".Build/web/themes/contrib/{$name}": ["type:drupal-theme"]
+        },
+        "drupal-scaffold": {
+            "locations": {
+                "web-root": ".Build/web/"
+            }
+        }
+    }
+}

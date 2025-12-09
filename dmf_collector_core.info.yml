@@ -1,0 +1,7 @@
+name: 'Anyrel Collector'
+type: module
+description: 'Collector integration for Anyrel'
+core_version_requirement: ^10 || ^11
+package: 'Anyrel'
+dependencies:
+  - dmf_core:dmf_core
