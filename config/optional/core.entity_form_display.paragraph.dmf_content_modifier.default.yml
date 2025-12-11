@@ -1,0 +1,28 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.paragraph.dmf_content_modifier.field_dmf_plugin_config
+    - paragraphs.paragraphs_type.dmf_content_modifier
+  module:
+    - dmf_core
+id: paragraph.dmf_content_modifier.default
+targetEntityType: paragraph
+bundle: dmf_content_modifier
+mode: default
+content:
+  field_dmf_plugin_config:
+    weight: 0
+    settings:
+      document_type: content-modifier
+      mode: modal
+      rows: 5
+      supports_includes: false
+      additional_parameters:
+        contentModifierGroup: plugin
+        contentModifierList: '0'
+    third_party_settings: {  }
+    type: dmf_schema_configuration_editor
+hidden:
+  created: true
+  uid: true

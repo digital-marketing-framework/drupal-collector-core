@@ -1,0 +1,17 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - dmf_core
+    - paragraphs
+id: paragraph.field_dmf_plugin_config
+field_name: field_dmf_plugin_config
+entity_type: paragraph
+type: dmf_schema_configuration
+settings: {  }
+module: dmf_core
+locked: false
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false

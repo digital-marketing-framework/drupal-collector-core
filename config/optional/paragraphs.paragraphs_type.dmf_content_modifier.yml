@@ -1,0 +1,13 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - dmf_collector_core
+  module:
+    - paragraphs
+id: dmf_content_modifier
+label: 'Anyrel Content'
+description: 'Renders personalized content from Anyrel content modifiers. Use this to display dynamic widgets that respond to user personas and collected data.'
+icon_uuid: null
+behavior_plugins: {  }

@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.paragraph.field_dmf_plugin_config
+    - paragraphs.paragraphs_type.dmf_content_modifier
+  module:
+    - dmf_core
+id: paragraph.dmf_content_modifier.field_dmf_plugin_config
+field_name: field_dmf_plugin_config
+entity_type: paragraph
+bundle: dmf_content_modifier
+label: 'Content Modifier Configuration'
+description: 'Select and configure the content modifier to render in this paragraph.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: dmf_schema_configuration

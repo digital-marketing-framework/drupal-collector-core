@@ -5,11 +5,14 @@
  * Anyrel Collector module functions.
  */
 
+use DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface as CollectorRegistryInterface;
 use DigitalMarketingFramework\Core\Registry\RegistryCollectionInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\dmf_collector_core\ContentModifier\ContentModifierFieldManager;
 use Drupal\dmf_collector_core\Render\ContentModifierPreRender;
+use Drupal\paragraphs\ParagraphInterface;
 
 /**
  * Implements hook_entity_build_defaults_alter().
@@ -112,4 +115,78 @@ function dmf_collector_core_form_node_form_alter(array &$form, FormStateInterfac
 
   // Move the field into the container using #group.
   $form[$fieldName]['#group'] = 'dmf_content_personalization';
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view() for paragraph entities.
+ *
+ * Handles rendering of the "Anyrel Content" paragraph type (dmf_content_modifier).
+ * This paragraph type renders content from Anyrel's ContentModifierHandler
+ * rather than displaying field values.
+ *
+ * Unlike page/element content modifiers (which personalize existing content),
+ * plugin content modifiers generate their own markup entirely from Anyrel.
+ */
+function dmf_collector_core_paragraph_view(array &$build, ParagraphInterface $entity, EntityViewDisplayInterface $display, string $view_mode): void {
+  // Only handle our specific paragraph type.
+  if ($entity->bundle() !== 'dmf_content_modifier') {
+    return;
+  }
+
+  // Get the configuration from the field.
+  if (!$entity->hasField('field_dmf_plugin_config')) {
+    return;
+  }
+
+  $configurationDocument = $entity->get('field_dmf_plugin_config')->value ?? '';
+  if (empty($configurationDocument)) {
+    return;
+  }
+
+  try {
+    /** @var RegistryCollectionInterface $registryCollection */
+    $registryCollection = \Drupal::service('dmf_core.registry_collection');
+
+    /** @var CollectorRegistryInterface $collectorRegistry */
+    $collectorRegistry = $registryCollection->getRegistryByClass(CollectorRegistryInterface::class);
+
+    $handler = $collectorRegistry->getContentModifierHandler();
+
+    // Generate unique ID for this paragraph instance.
+    $id = 'dmf-p-' . $entity->id();
+
+    // Render the content modifier.
+    // asList = false because plugin content modifiers have a single modifier.
+    $html = $handler->renderFromConfigurationDocument(
+      $configurationDocument,
+      false, // asList
+      $id
+    );
+
+    // Replace the field output with the rendered content.
+    // The hidden formatter already produces no output, but we explicitly
+    // set the content to ensure only our rendered HTML appears.
+    $build['field_dmf_plugin_config'] = [
+      '#markup' => $html,
+      '#weight' => 0,
+    ];
+
+    // Ensure the ID attribute is set on the paragraph wrapper.
+    if (!isset($build['#attributes'])) {
+      $build['#attributes'] = [];
+    }
+    $build['#attributes']['id'] = $id;
+
+  } catch (\Exception $e) {
+    \Drupal::logger('dmf_collector_core')->error(
+      'Error rendering plugin content modifier for paragraph @id: @message',
+      ['@id' => $entity->id(), '@message' => $e->getMessage()]
+    );
+
+    // Show error message in development mode.
+    $build['field_dmf_plugin_config'] = [
+      '#markup' => '<div class="dmf-error">Error rendering content modifier.</div>',
+      '#weight' => 0,
+    ];
+  }
 }
