@@ -26,6 +26,13 @@ services:
       - '@current_route_match'
     public: true
 
+  # Settings Lazy Builder
+  dmf_collector_core.settings_lazy_builder:
+    class: Drupal\dmf_collector_core\Render\SettingsLazyBuilder
+    arguments:
+      - '@dmf_core.registry_collection'
+    public: true
+
   # Event Subscribers
   dmf_collector_core.event_subscriber.registry_collection:
     class: Drupal\dmf_collector_core\Registry\EventSubscriber\RegistryCollectionEventSubscriber

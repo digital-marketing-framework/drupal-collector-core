@@ -7,6 +7,8 @@
 
 use DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface as CollectorRegistryInterface;
 use DigitalMarketingFramework\Core\Registry\RegistryCollectionInterface;
+use Drupal\block_content\Plugin\Block\BlockContentBlock;
+use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -42,8 +44,8 @@ function dmf_collector_core_entity_build_defaults_alter(array &$build, EntityInt
  * Implements hook_page_bottom().
  *
  * Outputs the global DMF settings JSON block and attaches frontend scripts.
- * This runs after all content has been rendered, so content modifiers
- * registered during entity rendering will be included in the output.
+ * Uses a lazy builder to ensure settings are collected after all content
+ * (including lazy-built blocks in regions) has been rendered.
  */
 function dmf_collector_core_page_bottom(array &$page_bottom): void {
   // Only output on non-admin pages.
@@ -51,39 +53,16 @@ function dmf_collector_core_page_bottom(array &$page_bottom): void {
     return;
   }
 
-  try {
-    /** @var RegistryCollectionInterface $registryCollection */
-    $registryCollection = \Drupal::service('dmf_core.registry_collection');
-
-    $settings = $registryCollection->getFrontendSettings();
-
-    // Only output if there are settings to render.
-    if (empty($settings)) {
-      return;
-    }
-
-    $page_bottom['dmf_settings'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'script',
-      '#attributes' => [
-        'type' => 'application/json',
-        'data-dmf-selector' => 'dmf-settings-json',
-      ],
-      '#value' => json_encode($settings, JSON_THROW_ON_ERROR),
-      // Attach frontend scripts library (defined in dmf_core).
-      '#attached' => [
-        'library' => [
-          'dmf_core/frontend-scripts',
-        ],
-      ],
-    ];
-  }
-  catch (\Exception $e) {
-    \Drupal::logger('dmf_collector_core')->error(
-      'Error rendering DMF frontend settings: @message',
-      ['@message' => $e->getMessage()]
-    );
-  }
+  // Use a lazy builder so settings are collected after all blocks render.
+  // This is necessary because Block Layout blocks use lazy builders and
+  // are rendered after hook_page_bottom() normally runs.
+  $page_bottom['dmf_settings'] = [
+    '#lazy_builder' => [
+      'dmf_collector_core.settings_lazy_builder:renderSettings',
+      [],
+    ],
+    '#create_placeholder' => TRUE,
+  ];
 }
 
 /**
@@ -189,4 +168,40 @@ function dmf_collector_core_paragraph_view(array &$build, ParagraphInterface $en
       '#weight' => 0,
     ];
   }
+}
+
+/**
+ * Implements hook_block_view_alter().
+ *
+ * Handles element content modifiers for block_content blocks rendered via
+ * Block plugins (Block Layout or Block Field). This sets the ID on the
+ * Block plugin wrapper, which includes the display title.
+ *
+ * For block_content rendered directly (e.g., drupal_entity() in Twig),
+ * the entity pre-render callback handles it instead.
+ *
+ * @see \Drupal\dmf_collector_core\Render\ContentModifierPreRender
+ */
+function dmf_collector_core_block_view_alter(array &$build, BlockPluginInterface $block): void {
+  // Only handle block_content blocks.
+  if (!$block instanceof BlockContentBlock) {
+    return;
+  }
+
+  // Get the block_content entity from the block plugin.
+  $uuid = $block->getDerivativeId();
+  $entities = \Drupal::entityTypeManager()
+    ->getStorage('block_content')
+    ->loadByProperties(['uuid' => $uuid]);
+  $blockContent = reset($entities);
+
+  if (!$blockContent) {
+    return;
+  }
+
+  // Delegate to the service which handles field checking, settings registration,
+  // and wrapper application. It also sets the drupal_static flag to prevent
+  // double-processing in the entity pre-render callback.
+  \Drupal::service('dmf_collector_core.content_modifier_pre_render')
+    ->processBlockElementModifier($build, $blockContent);
 }
