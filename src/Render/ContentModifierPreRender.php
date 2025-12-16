@@ -5,6 +5,7 @@ namespace Drupal\dmf_collector_core\Render;
 use DigitalMarketingFramework\Collector\Core\ContentModifier\ContentModifierHandlerInterface;
 use DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface as CollectorRegistryInterface;
 use DigitalMarketingFramework\Core\Registry\RegistryCollectionInterface;
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Security\TrustedCallbackInterface;
@@ -52,7 +53,7 @@ class ContentModifierPreRender implements TrustedCallbackInterface
     /**
      * Get the content modifier handler from the registry.
      *
-     * @return \DigitalMarketingFramework\Collector\Core\ContentModifier\ContentModifierHandlerInterface
+     * @return ContentModifierHandlerInterface
      *   The content modifier handler.
      */
     protected function getContentModifierHandler(): ContentModifierHandlerInterface
@@ -252,9 +253,10 @@ class ContentModifierPreRender implements TrustedCallbackInterface
             return $build;
         }
 
-        // Use existing ID or generate a unique one.
-        $id = $build['#attributes']['id']
-            ?? 'dmf-e-' . $entity->getEntityTypeId() . '-' . $entity->id();
+        // Generate a unique ID for this element instance.
+        // Html::getUniqueId() ensures uniqueness when the same entity appears multiple times.
+        $baseId = 'dmf-e-' . $entity->getEntityTypeId() . '-' . $entity->id();
+        $id = $build['#attributes']['id'] ?? Html::getUniqueId($baseId);
 
         // Register element-specific settings in the handler.
         // These will be included in the global settings JSON under content["{id}"].
@@ -267,13 +269,19 @@ class ContentModifierPreRender implements TrustedCallbackInterface
                 $id
             );
 
-            // Ensure #attributes exists.
-            if (!isset($build['#attributes'])) {
-                $build['#attributes'] = [];
-            }
-
             // Set the ID on the element so JS can find it via DMF.content[id].
-            $build['#attributes']['id'] = $id;
+            // Use #attributes if a theme wrapper exists, otherwise add our own wrapper.
+            if (isset($build['#theme'])) {
+                // Template exists (e.g., nodes) - use #attributes.
+                if (!isset($build['#attributes'])) {
+                    $build['#attributes'] = [];
+                }
+                $build['#attributes']['id'] = $id;
+            } else {
+                // No template wrapper (e.g., block_content) - add wrapper div.
+                $build['#prefix'] = ($build['#prefix'] ?? '') . '<div id="' . $id . '">';
+                $build['#suffix'] = '</div>' . ($build['#suffix'] ?? '');
+            }
         } catch (\Exception $e) {
             \Drupal::logger('dmf_collector_core')->error(
                 'Error registering element content modifier settings: @message',
