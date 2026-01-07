@@ -49,16 +49,29 @@
     "extra": {
         "installer-name": "dmf_collector_core",
         "installer-paths": {
-            ".Build/web/core": ["type:drupal-core"],
-            ".Build/web/libraries/{$name}": ["type:drupal-library"],
-            ".Build/web/modules/contrib/{$name}": ["type:drupal-module"],
-            ".Build/web/profiles/contrib/{$name}": ["type:drupal-profile"],
-            ".Build/web/themes/contrib/{$name}": ["type:drupal-theme"]
+            ".Build/web/core": [
+                "type:drupal-core"
+            ],
+            ".Build/web/libraries/{$name}": [
+                "type:drupal-library"
+            ],
+            ".Build/web/modules/contrib/{$name}": [
+                "type:drupal-module"
+            ],
+            ".Build/web/profiles/contrib/{$name}": [
+                "type:drupal-profile"
+            ],
+            ".Build/web/themes/contrib/{$name}": [
+                "type:drupal-theme"
+            ]
         },
         "drupal-scaffold": {
             "locations": {
                 "web-root": ".Build/web/"
             }
+        },
+        "branch-alias": {
+            "dev-main": "1.x-dev"
         }
     }
 }
