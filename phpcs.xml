@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="Custom Drupal Module">
+    <file>src</file>
+    <rule ref=".Build/vendor/mediatis/drupal-coding-standards/phpcs.xml"/>
+</ruleset>

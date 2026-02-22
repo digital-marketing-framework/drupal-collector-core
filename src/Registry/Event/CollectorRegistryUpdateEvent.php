@@ -13,10 +13,10 @@ class CollectorRegistryUpdateEvent
     /**
      * Constructs a CollectorRegistryUpdateEvent object.
      *
-     * @param \DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface $registry
-     *   The collector registry.
-     * @param \DigitalMarketingFramework\Core\Registry\RegistryUpdateType $type
-     *   The update type.
+     * @param RegistryInterface $registry
+     *   The collector registry
+     * @param RegistryUpdateType $type
+     *   The update type
      */
     public function __construct(
         protected RegistryInterface $registry,
@@ -27,8 +27,8 @@ class CollectorRegistryUpdateEvent
     /**
      * Gets the collector registry.
      *
-     * @return \DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface
-     *   The collector registry.
+     * @return RegistryInterface
+     *   The collector registry
      */
     public function getRegistry(): RegistryInterface
     {
@@ -38,8 +38,8 @@ class CollectorRegistryUpdateEvent
     /**
      * Gets the update type.
      *
-     * @return \DigitalMarketingFramework\Core\Registry\RegistryUpdateType
-     *   The update type.
+     * @return RegistryUpdateType
+     *   The update type
      */
     public function getUpdateType(): RegistryUpdateType
     {

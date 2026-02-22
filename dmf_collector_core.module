@@ -11,6 +11,7 @@ use Drupal\block_content\Plugin\Block\BlockContentBlock;
 use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\dmf_collector_core\ContentModifier\ContentModifierFieldManager;
 use Drupal\dmf_collector_core\Render\ContentModifierPreRender;
@@ -49,7 +50,7 @@ function dmf_collector_core_entity_build_defaults_alter(array &$build, EntityInt
  */
 function dmf_collector_core_page_bottom(array &$page_bottom): void {
   // Only output on non-admin pages.
-  if (\Drupal::service('router.admin_context')->isAdminRoute()) {
+  if (Drupal::service('router.admin_context')->isAdminRoute()) {
     return;
   }
 
@@ -124,7 +125,7 @@ function dmf_collector_core_paragraph_view(array &$build, ParagraphInterface $en
 
   try {
     /** @var RegistryCollectionInterface $registryCollection */
-    $registryCollection = \Drupal::service('dmf_core.registry_collection');
+    $registryCollection = Drupal::service('dmf_core.registry_collection');
 
     /** @var CollectorRegistryInterface $collectorRegistry */
     $collectorRegistry = $registryCollection->getRegistryByClass(CollectorRegistryInterface::class);
@@ -154,10 +155,11 @@ function dmf_collector_core_paragraph_view(array &$build, ParagraphInterface $en
     if (!isset($build['#attributes'])) {
       $build['#attributes'] = [];
     }
+
     $build['#attributes']['id'] = $id;
 
-  } catch (\Exception $e) {
-    \Drupal::logger('dmf_collector_core')->error(
+  } catch (Exception $e) {
+    Drupal::logger('dmf_collector_core')->error(
       'Error rendering plugin content modifier for paragraph @id: @message',
       ['@id' => $entity->id(), '@message' => $e->getMessage()]
     );
@@ -190,18 +192,18 @@ function dmf_collector_core_block_view_alter(array &$build, BlockPluginInterface
 
   // Get the block_content entity from the block plugin.
   $uuid = $block->getDerivativeId();
-  $entities = \Drupal::entityTypeManager()
+  $entities = Drupal::entityTypeManager()
     ->getStorage('block_content')
     ->loadByProperties(['uuid' => $uuid]);
   $blockContent = reset($entities);
 
-  if (!$blockContent) {
+  if (!$blockContent instanceof FieldableEntityInterface) {
     return;
   }
 
   // Delegate to the service which handles field checking, settings registration,
   // and wrapper application. It also sets the drupal_static flag to prevent
   // double-processing in the entity pre-render callback.
-  \Drupal::service('dmf_collector_core.content_modifier_pre_render')
+  Drupal::service('dmf_collector_core.content_modifier_pre_render')
     ->processBlockElementModifier($build, $blockContent);
 }

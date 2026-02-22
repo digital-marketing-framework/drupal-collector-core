@@ -1,0 +1,66 @@
+'on':
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+permissions:
+    contents: read
+jobs:
+    code-quality:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php_version:
+                    - 8.2
+                    - 8.3
+                drupal_version:
+                    - 10
+                    - 11
+                exclude:
+                    -
+                        php_version: 8.2
+                        drupal_version: 11
+        steps:
+            -
+                name: Checkout
+                uses: actions/checkout@v4
+            -
+                name: 'Install PHP'
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: '${{ matrix.php_version }}'
+                    coverage: none
+                    tools: 'composer:v2.4'
+            -
+                name: 'Show Composer version'
+                run: 'composer --version'
+            -
+                name: 'Show the Composer configuration'
+                run: 'composer config --global --list'
+            -
+                name: 'Cache dependencies installed with composer'
+                uses: actions/cache@v3
+                with:
+                    key: 'php${{ matrix.php_version }}-drupal${{ matrix.drupal_version }}'
+                    path: ~/.cache/composer
+                    restore-keys: "php${{ matrix.php_version }}-composer-\n"
+            -
+                name: 'Install Composer dependencies'
+                run: "composer require drupal/core ^${{ matrix.drupal_version }} --no-progress\ncomposer install --no-progress\n"
+            -
+                name: 'Run command'
+                run: "composer ci\n"
+    semgrep:
+        name: semgrep
+        runs-on: ubuntu-latest
+        container:
+            image: semgrep/semgrep
+        if: "(github.actor != 'dependabot[bot]')"
+        steps:
+            -
+                uses: actions/checkout@v4
+            -
+                run: 'semgrep scan --config auto --error'

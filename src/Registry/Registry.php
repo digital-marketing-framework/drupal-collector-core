@@ -16,8 +16,8 @@ class Registry extends CoreCollectorRegistry
     /**
      * Constructs a Registry object.
      *
-     * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher
-     *   The event dispatcher.
+     * @param EventDispatcherInterface $eventDispatcher
+     *   The event dispatcher
      */
     public function __construct(
         protected EventDispatcherInterface $eventDispatcher,

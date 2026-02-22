@@ -8,9 +8,12 @@ use DigitalMarketingFramework\Core\Registry\RegistryCollectionInterface;
 use Drupal;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Security\TrustedCallbackInterface;
 use Drupal\dmf_collector_core\ContentModifier\ContentModifierFieldManager;
+use Exception;
 
 /**
  * Pre-render callback for content modifier fields.
@@ -65,6 +68,8 @@ class ContentModifierPreRender implements TrustedCallbackInterface
 {
     public function __construct(
         protected RouteMatchInterface $routeMatch,
+        protected RegistryCollectionInterface $registryCollection,
+        protected LoggerChannelFactoryInterface $loggerFactory,
     ) {
     }
 
@@ -82,31 +87,28 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      * This static method is required for Drupal's trusted callback system.
      * It retrieves the service instance and delegates to the instance method.
      *
-     * @param array $build
-     *   The entity render array.
+     * @param array<mixed> $build
+     *   The entity render array
      *
-     * @return array
-     *   The modified render array.
+     * @return array<mixed>
+     *   The modified render array
      */
     public static function preRenderCallback(array $build): array
     {
         return Drupal::service('dmf_collector_core.content_modifier_pre_render')
-            ->preRender($build);
+          ->preRender($build);
     }
 
     /**
      * Get the content modifier handler from the registry.
      *
      * @return ContentModifierHandlerInterface
-     *   The content modifier handler.
+     *   The content modifier handler
      */
     protected function getContentModifierHandler(): ContentModifierHandlerInterface
     {
-        /** @var RegistryCollectionInterface $registryCollection */
-        $registryCollection = Drupal::service('dmf_core.registry_collection');
-
         /** @var CollectorRegistryInterface $collectorRegistry */
-        $collectorRegistry = $registryCollection->getRegistryByClass(CollectorRegistryInterface::class);
+        $collectorRegistry = $this->registryCollection->getRegistryByClass(CollectorRegistryInterface::class);
 
         return $collectorRegistry->getContentModifierHandler();
     }
@@ -118,10 +120,10 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      * and processBlockElementModifier(). It handles settings registration and
      * ID wrapper application.
      *
-     * @param array &$build
-     *   The render array to modify.
+     * @param array<mixed> &$build
+     *   The render array to modify
      * @param string $configurationDocument
-     *   The configuration document JSON.
+     *   The configuration document JSON
      * @param string $baseId
      *   Base ID for the element (e.g., 'dmf-e-block_content-123').
      * @param bool $forceWrapper
@@ -129,16 +131,16 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      *   #attributes['id'] when #theme exists (for template-based rendering).
      *
      * @return string
-     *   The unique ID that was applied.
+     *   The unique ID that was applied
      *
-     * @throws \Exception
-     *   If settings registration fails.
+     * @throws Exception
+     *   If settings registration fails
      */
     protected function registerAndWrapElement(
         array &$build,
         string $configurationDocument,
         string $baseId,
-        bool $forceWrapper = false
+        bool $forceWrapper = false,
     ): string {
         $id = Html::getUniqueId($baseId);
 
@@ -156,6 +158,7 @@ class ContentModifierPreRender implements TrustedCallbackInterface
             if (!isset($build['#attributes'])) {
                 $build['#attributes'] = [];
             }
+
             $build['#attributes']['id'] = $id;
         } else {
             // No template or forced wrapper - add wrapper div.
@@ -173,15 +176,15 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      * (Block Layout or Block Field). This ensures the ID wrapper includes the
      * block's display title, which is rendered outside the entity wrapper.
      *
-     * @param array &$build
-     *   The block render array (Block plugin level, not entity level).
-     * @param EntityInterface $blockContent
-     *   The block_content entity.
+     * @param array<mixed> &$build
+     *   The block render array (Block plugin level, not entity level)
+     * @param FieldableEntityInterface $blockContent
+     *   The block_content entity
      *
      * @return bool
-     *   TRUE if the block was processed, FALSE if no processing was needed.
+     *   TRUE if the block was processed, FALSE if no processing was needed
      */
-    public function processBlockElementModifier(array &$build, EntityInterface $blockContent): bool
+    public function processBlockElementModifier(array &$build, FieldableEntityInterface $blockContent): bool
     {
         $fieldName = ContentModifierFieldManager::FIELD_NAME_ELEMENT;
 
@@ -189,8 +192,8 @@ class ContentModifierPreRender implements TrustedCallbackInterface
             return false;
         }
 
-        $configurationDocument = $blockContent->get($fieldName)->value ?? '';
-        if (empty($configurationDocument)) {
+        $configurationDocument = $blockContent->get($fieldName)->getString();
+        if ($configurationDocument === '') {
             return false;
         }
 
@@ -205,11 +208,12 @@ class ContentModifierPreRender implements TrustedCallbackInterface
             $handledBlockContent[$blockContent->uuid()] = true;
 
             return true;
-        } catch (\Exception $e) {
-            Drupal::logger('dmf_collector_core')->error(
+        } catch (Exception $e) {
+            $this->loggerFactory->get('dmf_collector_core')->error(
                 'Error processing element modifier for block_content @id: @message',
                 ['@id' => $blockContent->id(), '@message' => $e->getMessage()]
             );
+
             return false;
         }
     }
@@ -220,39 +224,33 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      * Determines whether the entity is rendered as the main page or as an
      * embedded element, then processes the appropriate content modifier field.
      *
-     * @param array $build
-     *   The entity render array.
+     * @param array<mixed> $build
+     *   The entity render array
      *
-     * @return array
-     *   The modified render array.
+     * @return array<mixed>
+     *   The modified render array
      */
     public function preRender(array $build): array
     {
         // Get the entity from the render array.
         $entity = $this->getEntityFromBuild($build);
-        if (!$entity instanceof EntityInterface) {
+        if (!$entity instanceof FieldableEntityInterface) {
             return $build;
         }
 
         $isMainPage = $this->isMainPageEntity($entity);
 
-        if ($isMainPage) {
-            $build = $this->processPageModifier($build, $entity);
-        } else {
-            $build = $this->processElementModifier($build, $entity);
-        }
-
-        return $build;
+        return $isMainPage ? $this->processPageModifier($build, $entity) : $this->processElementModifier($build, $entity);
     }
 
     /**
      * Get the entity from a render array.
      *
-     * @param array $build
-     *   The render array.
+     * @param array<mixed> $build
+     *   The render array
      *
      * @return EntityInterface|null
-     *   The entity, or null if not found.
+     *   The entity, or null if not found
      */
     protected function getEntityFromBuild(array $build): ?EntityInterface
     {
@@ -273,7 +271,7 @@ class ContentModifierPreRender implements TrustedCallbackInterface
 
         // Generic check for entity types.
         foreach ($build as $key => $value) {
-            if (str_starts_with($key, '#') && $value instanceof EntityInterface) {
+            if (str_starts_with((string)$key, '#') && $value instanceof EntityInterface) {
                 return $value;
             }
         }
@@ -285,10 +283,10 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      * Check if the entity is the main page entity.
      *
      * @param EntityInterface $entity
-     *   The entity to check.
+     *   The entity to check
      *
      * @return bool
-     *   TRUE if this is the main page entity, FALSE otherwise.
+     *   TRUE if this is the main page entity, FALSE otherwise
      */
     protected function isMainPageEntity(EntityInterface $entity): bool
     {
@@ -308,7 +306,7 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      * Get the main entity from the current route.
      *
      * @return EntityInterface|null
-     *   The route's main entity, or null if not an entity route.
+     *   The route's main entity, or null if not an entity route
      */
     protected function getRouteEntity(): ?EntityInterface
     {
@@ -335,15 +333,15 @@ class ContentModifierPreRender implements TrustedCallbackInterface
     /**
      * Process page content modifier field.
      *
-     * @param array $build
-     *   The render array.
-     * @param EntityInterface $entity
-     *   The entity.
+     * @param array<mixed> $build
+     *   The render array
+     * @param FieldableEntityInterface $entity
+     *   The entity
      *
-     * @return array
-     *   The modified render array.
+     * @return array<mixed>
+     *   The modified render array
      */
-    protected function processPageModifier(array $build, EntityInterface $entity): array
+    protected function processPageModifier(array $build, FieldableEntityInterface $entity): array
     {
         $fieldName = ContentModifierFieldManager::FIELD_NAME_PAGE;
 
@@ -351,8 +349,8 @@ class ContentModifierPreRender implements TrustedCallbackInterface
             return $build;
         }
 
-        $configurationDocument = $entity->get($fieldName)->value ?? '';
-        if (empty($configurationDocument)) {
+        $configurationDocument = $entity->get($fieldName)->getString();
+        if ($configurationDocument === '') {
             return $build;
         }
 
@@ -363,8 +361,8 @@ class ContentModifierPreRender implements TrustedCallbackInterface
                 $configurationDocument,
                 true // asList
             );
-        } catch (\Exception $e) {
-            Drupal::logger('dmf_collector_core')->error(
+        } catch (Exception $e) {
+            $this->loggerFactory->get('dmf_collector_core')->error(
                 'Error registering page content modifier settings: @message',
                 ['@message' => $e->getMessage()]
             );
@@ -372,7 +370,6 @@ class ContentModifierPreRender implements TrustedCallbackInterface
 
         // Page modifiers don't add data attributes to the element.
         // They operate on the page level via the global settings JSON.
-
         return $build;
     }
 
@@ -383,15 +380,15 @@ class ContentModifierPreRender implements TrustedCallbackInterface
      * drupal_entity() in Twig). For block_content rendered via Block plugins,
      * hook_block_view_alter() handles it instead to include the display title.
      *
-     * @param array $build
-     *   The render array.
-     * @param EntityInterface $entity
-     *   The entity.
+     * @param array<mixed> $build
+     *   The render array
+     * @param FieldableEntityInterface $entity
+     *   The entity
      *
-     * @return array
-     *   The modified render array.
+     * @return array<mixed>
+     *   The modified render array
      */
-    protected function processElementModifier(array $build, EntityInterface $entity): array
+    protected function processElementModifier(array $build, FieldableEntityInterface $entity): array
     {
         $fieldName = ContentModifierFieldManager::FIELD_NAME_ELEMENT;
 
@@ -406,14 +403,15 @@ class ContentModifierPreRender implements TrustedCallbackInterface
         // (e.g., drupal_entity('block_content', ...)) are processed correctly.
         if ($entity->getEntityTypeId() === 'block_content') {
             $handledBlockContent = &drupal_static('dmf_block_content_handled', []);
-            if (!empty($handledBlockContent[$entity->uuid()])) {
+            if ((bool)($handledBlockContent[$entity->uuid()] ?? false)) {
                 unset($handledBlockContent[$entity->uuid()]);
+
                 return $build;
             }
         }
 
-        $configurationDocument = $entity->get($fieldName)->value ?? '';
-        if (empty($configurationDocument)) {
+        $configurationDocument = $entity->get($fieldName)->getString();
+        if ($configurationDocument === '') {
             return $build;
         }
 
@@ -423,8 +421,8 @@ class ContentModifierPreRender implements TrustedCallbackInterface
             // Use #attributes if available, otherwise wrapper div.
             // forceWrapper = false allows using #attributes when #theme exists.
             $this->registerAndWrapElement($build, $configurationDocument, $baseId, false);
-        } catch (\Exception $e) {
-            Drupal::logger('dmf_collector_core')->error(
+        } catch (Exception $e) {
+            $this->loggerFactory->get('dmf_collector_core')->error(
                 'Error registering element content modifier settings: @message',
                 ['@message' => $e->getMessage()]
             );

@@ -62,11 +62,11 @@ class ContentModifierFieldManager
      * @var array<string>
      */
     protected const PAGE_ENTITY_TYPE_EXCLUDE_LIST = [
-        'block_content',      // Embedded blocks, not standalone pages
-        'file',               // File entities
-        'menu_link_content',  // Menu link configuration
-        'redirect',           // URL redirect configuration
-        'shortcut',           // User shortcut links
+        'block_content', // Embedded blocks, not standalone pages
+        'file', // File entities
+        'menu_link_content', // Menu link configuration
+        'redirect', // URL redirect configuration
+        'shortcut', // User shortcut links
         'webform_submission', // Form submission data records
     ];
 
@@ -84,7 +84,7 @@ class ContentModifierFieldManager
      * link template (i.e., can be viewed as a standalone page).
      *
      * @return array<string, string>
-     *   Entity type IDs as keys, labels as values.
+     *   Entity type IDs as keys, labels as values
      */
     protected function getPageEntityTypes(): array
     {
@@ -106,11 +106,11 @@ class ContentModifierFieldManager
                 continue;
             }
 
-            $pageEntityTypes[$entityTypeId] = (string) $entityType->getLabel();
+            $pageEntityTypes[$entityTypeId] = (string)$entityType->getLabel();
         }
 
         // Sort alphabetically by label, but keep 'node' at the top
-        uasort($pageEntityTypes, fn($a, $b) => strcasecmp($a, $b));
+        uasort($pageEntityTypes, strcasecmp(...));
         if (isset($pageEntityTypes['node'])) {
             $nodeLabel = $pageEntityTypes['node'];
             unset($pageEntityTypes['node']);
@@ -124,7 +124,7 @@ class ContentModifierFieldManager
      * Get entity types that can have element content modifiers.
      *
      * @return array<string, string>
-     *   Entity type IDs as keys, labels as values.
+     *   Entity type IDs as keys, labels as values
      */
     protected function getElementEntityTypes(): array
     {
@@ -136,7 +136,7 @@ class ContentModifierFieldManager
             }
 
             $entityType = $this->entityTypeManager->getDefinition($entityTypeId);
-            $elementEntityTypes[$entityTypeId] = (string) $entityType->getLabel();
+            $elementEntityTypes[$entityTypeId] = (string)$entityType->getLabel();
         }
 
         return $elementEntityTypes;
@@ -146,14 +146,14 @@ class ContentModifierFieldManager
      * Check if a field exists for a given entity type and bundle.
      *
      * @param string $entityTypeId
-     *   The entity type ID.
+     *   The entity type ID
      * @param string $bundle
-     *   The bundle name.
+     *   The bundle name
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      *
      * @return string
-     *   The field status: 'active', 'hidden', or 'removed'.
+     *   The field status: 'active', 'hidden', or 'removed'
      */
     protected function getFieldStatus(string $entityTypeId, string $bundle, string $fieldName): string
     {
@@ -174,14 +174,14 @@ class ContentModifierFieldManager
      * Get the current configuration for all content modifier fields.
      *
      * @return array<string, mixed>
-     *   The current configuration organized by category/entityType/bundle.
+     *   The current configuration organized by category/entityType/bundle
      */
     public function getCurrentConfiguration(): array
     {
         $config = [];
 
         // Page content modifiers
-        foreach ($this->getPageEntityTypes() as $entityTypeId => $entityTypeLabel) {
+        foreach (array_keys($this->getPageEntityTypes()) as $entityTypeId) {
             $bundles = $this->bundleInfo->getBundleInfo($entityTypeId);
             foreach ($bundles as $bundleId => $bundleInfo) {
                 $config[self::KEY_PAGE][$entityTypeId][$bundleId] = $this->getFieldStatus(
@@ -193,7 +193,7 @@ class ContentModifierFieldManager
         }
 
         // Element content modifiers
-        foreach ($this->getElementEntityTypes() as $entityTypeId => $entityTypeLabel) {
+        foreach (array_keys($this->getElementEntityTypes()) as $entityTypeId) {
             $bundles = $this->bundleInfo->getBundleInfo($entityTypeId);
             foreach ($bundles as $bundleId => $bundleInfo) {
                 $config[self::KEY_ELEMENT][$entityTypeId][$bundleId] = $this->getFieldStatus(
@@ -206,7 +206,7 @@ class ContentModifierFieldManager
 
         // Form content modifiers (webform)
         if ($this->entityTypeManager->hasDefinition(self::KEY_WEBFORM)) {
-            // TODO: Implement webform field status check
+            // @todo Implement webform field status check
             $config[self::KEY_FORM][self::KEY_WEBFORM][self::KEY_STATUS] = self::STATUS_REMOVED;
         }
 
@@ -217,17 +217,17 @@ class ContentModifierFieldManager
      * Apply a status change for a specific entity type/bundle.
      *
      * @param string $entityTypeId
-     *   The entity type ID.
+     *   The entity type ID
      * @param string $bundleId
-     *   The bundle ID.
+     *   The bundle ID
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      * @param string $fieldLabel
-     *   The field label.
+     *   The field label
      * @param string $currentStatus
-     *   The current status.
+     *   The current status
      * @param string $newStatus
-     *   The new status.
+     *   The new status
      */
     public function applyStatusChange(
         string $entityTypeId,
@@ -250,6 +250,7 @@ class ContentModifierFieldManager
                     // Field exists but hidden - show it
                     $this->showFieldInFormDisplay($entityTypeId, $bundleId, $fieldName);
                 }
+
                 break;
 
             case self::STATUS_HIDDEN:
@@ -261,6 +262,7 @@ class ContentModifierFieldManager
                     // Field exists - just hide it
                     $this->hideFieldFromFormDisplay($entityTypeId, $bundleId, $fieldName);
                 }
+
                 break;
 
             case self::STATUS_REMOVED:
@@ -274,13 +276,13 @@ class ContentModifierFieldManager
      * Create a content modifier field for an entity type/bundle.
      *
      * @param string $entityTypeId
-     *   The entity type ID.
+     *   The entity type ID
      * @param string $bundleId
-     *   The bundle ID.
+     *   The bundle ID
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      * @param string $fieldLabel
-     *   The field label.
+     *   The field label
      */
     protected function createField(
         string $entityTypeId,
@@ -326,11 +328,11 @@ class ContentModifierFieldManager
      * Delete a content modifier field from an entity type/bundle.
      *
      * @param string $entityTypeId
-     *   The entity type ID.
+     *   The entity type ID
      * @param string $bundleId
-     *   The bundle ID.
+     *   The bundle ID
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      */
     protected function deleteField(
         string $entityTypeId,
@@ -351,10 +353,10 @@ class ContentModifierFieldManager
      * Get the content modifier group for a field name.
      *
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      *
      * @return string
-     *   The content modifier group ('page', 'element', or 'form').
+     *   The content modifier group ('page', 'element', or 'form')
      */
     protected function getContentModifierGroup(string $fieldName): string
     {
@@ -370,11 +372,11 @@ class ContentModifierFieldManager
      * Show a field in the entity form display.
      *
      * @param string $entityTypeId
-     *   The entity type ID.
+     *   The entity type ID
      * @param string $bundleId
-     *   The bundle ID.
+     *   The bundle ID
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      */
     protected function showFieldInFormDisplay(
         string $entityTypeId,
@@ -411,11 +413,11 @@ class ContentModifierFieldManager
      * Hide a field from the entity form display.
      *
      * @param string $entityTypeId
-     *   The entity type ID.
+     *   The entity type ID
      * @param string $bundleId
-     *   The bundle ID.
+     *   The bundle ID
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      */
     protected function hideFieldFromFormDisplay(
         string $entityTypeId,
@@ -436,11 +438,11 @@ class ContentModifierFieldManager
      * adds data attributes directly to the entity wrapper element.
      *
      * @param string $entityTypeId
-     *   The entity type ID.
+     *   The entity type ID
      * @param string $bundleId
-     *   The bundle ID.
+     *   The bundle ID
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      */
     protected function configureViewDisplay(
         string $entityTypeId,
@@ -459,7 +461,7 @@ class ContentModifierFieldManager
      * Build the schema document for content modifier settings.
      *
      * @return SchemaDocument
-     *   The schema document with all content modifier categories.
+     *   The schema document with all content modifier categories
      */
     public function buildSchemaDocument(): SchemaDocument
     {
@@ -495,10 +497,10 @@ class ContentModifierFieldManager
      * Get select options based on current field status.
      *
      * @param string $currentStatus
-     *   The current field status.
+     *   The current field status
      *
      * @return array<string, string>
-     *   The available options.
+     *   The available options
      */
     protected function getStatusOptions(string $currentStatus): array
     {
@@ -522,15 +524,15 @@ class ContentModifierFieldManager
      * Build schema for a category of content modifiers.
      *
      * @param ContainerSchema $schema
-     *   The schema to add properties to.
+     *   The schema to add properties to
      * @param string $categoryKey
      *   The category key (e.g., 'page', 'element').
      * @param string $categoryLabel
-     *   The category label.
+     *   The category label
      * @param array<string, string> $entityTypes
-     *   Entity type IDs as keys, labels as values.
+     *   Entity type IDs as keys, labels as values
      * @param string $fieldName
-     *   The field name used for this category.
+     *   The field name used for this category
      */
     protected function buildCategorySchema(
         ContainerSchema $schema,
@@ -545,12 +547,12 @@ class ContentModifierFieldManager
         foreach ($entityTypes as $entityTypeId => $entityTypeLabel) {
             $bundles = $this->bundleInfo->getBundleInfo($entityTypeId);
 
-            if (empty($bundles)) {
+            if ($bundles === []) {
                 continue;
             }
 
             // Sort bundles alphabetically by label
-            uasort($bundles, fn($a, $b) => strcasecmp($a['label'], $b['label']));
+            uasort($bundles, fn ($a, $b) => strcasecmp((string)$a['label'], (string)$b['label']));
 
             $entityTypeSchema = new ContainerSchema();
             $entityTypeSchema->getRenderingDefinition()->setLabel($entityTypeLabel);
@@ -563,6 +565,7 @@ class ContentModifierFieldManager
                 foreach ($options as $value => $label) {
                     $stringSchema->getAllowedValues()->addValue($value, $label);
                 }
+
                 $stringSchema->getRenderingDefinition()->setFormat(RenderingDefinitionInterface::FORMAT_SELECT);
                 $stringSchema->getRenderingDefinition()->setLabel('Bundle: ' . $bundleData['label']);
 
@@ -579,7 +582,7 @@ class ContentModifierFieldManager
      * Build schema for form content modifiers (webform and other form modules).
      *
      * @param ContainerSchema $schema
-     *   The schema to add properties to.
+     *   The schema to add properties to
      */
     protected function buildFormSchema(ContainerSchema $schema): void
     {
@@ -605,7 +608,7 @@ class ContentModifierFieldManager
         }
 
         // Only add the form category if there are any form modules available
-        if (count($categorySchema->getProperties()) > 0) {
+        if ($categorySchema->getProperties() !== []) {
             $schema->addProperty(self::KEY_FORM, $categorySchema);
         }
     }

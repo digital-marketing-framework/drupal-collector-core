@@ -90,13 +90,13 @@ class DrupalContentModifierSettingsSectionController extends SectionController i
      * Process changes for a category of content modifiers.
      *
      * @param array<string, array<string, string>> $newConfig
-     *   The new configuration.
+     *   The new configuration
      * @param array<string, array<string, string>> $currentConfig
-     *   The current configuration.
+     *   The current configuration
      * @param string $fieldName
-     *   The field name.
+     *   The field name
      * @param string $fieldLabel
-     *   The field label.
+     *   The field label
      */
     protected function processCategory(
         array $newConfig,
@@ -124,13 +124,13 @@ class DrupalContentModifierSettingsSectionController extends SectionController i
      * Process changes for form content modifiers.
      *
      * @param array<string, string> $newConfig
-     *   The new configuration.
+     *   The new configuration
      * @param array<string, string> $currentConfig
-     *   The current configuration.
+     *   The current configuration
      */
     protected function processFormCategory(array $newConfig, array $currentConfig): void
     {
-        // TODO: Implement webform content modifier handling
+        // @todo Implement webform content modifier handling
         // This will require different logic since webforms don't use Field API
     }
 }

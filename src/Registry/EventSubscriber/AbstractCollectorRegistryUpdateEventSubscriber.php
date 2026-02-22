@@ -17,8 +17,8 @@ abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSu
     /**
      * Constructs an AbstractCollectorRegistryUpdateEventSubscriber object.
      *
-     * @param \DigitalMarketingFramework\Core\InitializationInterface $initialization
-     *   The initialization service.
+     * @param InitializationInterface $initialization
+     *   The initialization service
      */
     public function __construct(
         protected InitializationInterface $initialization,
@@ -38,8 +38,8 @@ abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSu
     /**
      * Initializes global configuration.
      *
-     * @param \DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface $registry
-     *   The collector registry.
+     * @param RegistryInterface $registry
+     *   The collector registry
      */
     protected function initGlobalConfiguration(RegistryInterface $registry): void
     {
@@ -49,8 +49,8 @@ abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSu
     /**
      * Initializes services.
      *
-     * @param \DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface $registry
-     *   The collector registry.
+     * @param RegistryInterface $registry
+     *   The collector registry
      */
     protected function initServices(RegistryInterface $registry): void
     {
@@ -60,8 +60,8 @@ abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSu
     /**
      * Initializes plugins.
      *
-     * @param \DigitalMarketingFramework\Collector\Core\Registry\RegistryInterface $registry
-     *   The collector registry.
+     * @param RegistryInterface $registry
+     *   The collector registry
      */
     protected function initPlugins(RegistryInterface $registry): void
     {
@@ -71,8 +71,8 @@ abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSu
     /**
      * Handles registry update event.
      *
-     * @param \Drupal\dmf_collector_core\Registry\Event\CollectorRegistryUpdateEvent $event
-     *   The event.
+     * @param CollectorRegistryUpdateEvent $event
+     *   The event
      */
     public function onRegistryUpdate(CollectorRegistryUpdateEvent $event): void
     {
@@ -87,9 +87,11 @@ abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSu
             case RegistryUpdateType::GLOBAL_CONFIGURATION:
                 $this->initGlobalConfiguration($registry);
                 break;
+
             case RegistryUpdateType::SERVICE:
                 $this->initServices($registry);
                 break;
+
             case RegistryUpdateType::PLUGIN:
                 $this->initPlugins($registry);
                 break;

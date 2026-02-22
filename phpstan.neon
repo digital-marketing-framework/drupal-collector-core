@@ -1,0 +1,2 @@
+includes:
+	- .Build/vendor/mediatis/drupal-coding-standards/phpstan.neon

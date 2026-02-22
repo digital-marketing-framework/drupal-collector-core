@@ -24,6 +24,8 @@ services:
     class: Drupal\dmf_collector_core\Render\ContentModifierPreRender
     arguments:
       - '@current_route_match'
+      - '@dmf_core.registry_collection'
+      - '@logger.factory'
     public: true
 
   # Settings Lazy Builder

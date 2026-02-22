@@ -29,17 +29,12 @@ class SettingsLazyBuilder implements TrustedCallbackInterface
     /**
      * Lazy builder callback to render DMF settings.
      *
-     * @return array
-     *   A render array containing the settings JSON script tag.
+     * @return array<string,mixed>
+     *   A render array containing the settings JSON script tag
      */
     public function renderSettings(): array
     {
         $settings = $this->registryCollection->getFrontendSettings();
-
-        // Return empty array if no settings.
-        if (empty($settings)) {
-            return [];
-        }
 
         return [
             '#type' => 'html_tag',

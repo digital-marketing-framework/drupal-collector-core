@@ -18,8 +18,8 @@ class CoreRegistryUpdateEventSubscriber extends AbstractCoreRegistryUpdateEventS
     /**
      * Constructs a CoreRegistryUpdateEventSubscriber object.
      *
-     * @param \Drupal\dmf_collector_core\ContentModifier\ContentModifierFieldManager $fieldManager
-     *   The content modifier field manager service.
+     * @param ContentModifierFieldManager $fieldManager
+     *   The content modifier field manager service
      */
     public function __construct(
         protected ContentModifierFieldManager $fieldManager,
