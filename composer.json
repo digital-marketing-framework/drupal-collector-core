@@ -23,7 +23,7 @@
     ],
     "homepage": "https://www.mediatis.de",
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
         "digital-marketing-framework/collector-core": "^3.1",
         "digital-marketing-framework/drupal-core": "^1.0",
         "digital-marketing-framework/drupal-template-engine-twig": "^1.0",
