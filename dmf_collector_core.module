@@ -57,12 +57,15 @@ function dmf_collector_core_page_bottom(array &$page_bottom): void {
   // Use a lazy builder so settings are collected after all blocks render.
   // This is necessary because Block Layout blocks use lazy builders and
   // are rendered after hook_page_bottom() normally runs.
+  // Explicitly disable placeholder creation to prevent BigPipe from
+  // extracting this into a sub-request, where the accumulated content
+  // modifier settings from the main render would not be available.
   $page_bottom['dmf_settings'] = [
     '#lazy_builder' => [
       'dmf_collector_core.settings_lazy_builder:renderSettings',
       [],
     ],
-    '#create_placeholder' => TRUE,
+    '#create_placeholder' => FALSE,
   ];
 }
 
