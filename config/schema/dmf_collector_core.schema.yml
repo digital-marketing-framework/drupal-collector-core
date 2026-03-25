@@ -1,0 +1,24 @@
+# Global configuration schema for dmf_collector_core module
+# This defines the structure of dmf_collector_core.global_settings config object
+# Based on DigitalMarketingFramework\Collector\Core\GlobalConfiguration\Schema\CollectorCoreGlobalConfigurationSchema
+
+dmf_collector_core.global_settings:
+  type: config_object
+  label: 'Anyrel Collector Core - Global Settings'
+  mapping:
+    botProtection:
+      type: mapping
+      label: 'Bot Protection'
+      mapping:
+        enabled:
+          type: boolean
+          label: 'Enabled'
+        timeout:
+          type: integer
+          label: 'Timeout (in seconds)'
+        penaltyPerAttempt:
+          type: integer
+          label: 'Penalty per Attempt (in seconds)'
+        maxPenalty:
+          type: integer
+          label: 'Max penalty (in seconds)'

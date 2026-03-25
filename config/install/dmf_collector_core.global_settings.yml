@@ -1,0 +1,9 @@
+# Default global settings for Anyrel Collector Core
+# These values are installed when the module is enabled
+# Runtime values are stored in the database and can be modified via the configuration editor
+
+botProtection:
+  enabled: true
+  timeout: 300
+  penaltyPerAttempt: 5
+  maxPenalty: 30
