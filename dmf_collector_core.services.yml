@@ -44,16 +44,23 @@ services:
       - { name: event_subscriber }
     public: true
 
+  dmf_collector_core.initialization:
+    class: Drupal\dmf_collector_core\DrupalCollectorCoreInitialization
+    arguments:
+      - '@dmf_collector_core.content_modifier_field_manager'
+
   dmf_collector_core.event_subscriber.core_registry_update:
     class: Drupal\dmf_collector_core\Registry\EventSubscriber\CoreRegistryUpdateEventSubscriber
     arguments:
-      - '@dmf_collector_core.content_modifier_field_manager'
+      - '@dmf_collector_core.initialization'
     tags:
       - { name: event_subscriber }
     public: true
 
   dmf_collector_core.event_subscriber.collector_registry_update:
     class: Drupal\dmf_collector_core\Registry\EventSubscriber\CollectorRegistryUpdateEventSubscriber
+    arguments:
+      - '@dmf_collector_core.initialization'
     tags:
       - { name: event_subscriber }
     public: true

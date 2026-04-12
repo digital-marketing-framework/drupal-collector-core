@@ -7,6 +7,8 @@ use DigitalMarketingFramework\Core\InitializationInterface;
 use DigitalMarketingFramework\Core\Registry\RegistryDomain;
 use DigitalMarketingFramework\Core\Registry\RegistryUpdateType;
 use Drupal\dmf_collector_core\Registry\Event\CollectorRegistryUpdateEvent;
+use Drupal\dmf_core\DrupalInitialization;
+use Drupal\dmf_core\DrupalInitializationInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -14,6 +16,8 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSubscriberInterface
 {
+    protected DrupalInitializationInterface $initialization;
+
     /**
      * Constructs an AbstractCollectorRegistryUpdateEventSubscriber object.
      *
@@ -21,8 +25,13 @@ abstract class AbstractCollectorRegistryUpdateEventSubscriber implements EventSu
      *   The initialization service
      */
     public function __construct(
-        protected InitializationInterface $initialization,
+        InitializationInterface $initialization,
     ) {
+        if ($initialization instanceof DrupalInitializationInterface) {
+            $this->initialization = $initialization;
+        } else {
+            $this->initialization = new DrupalInitialization(inner: $initialization);
+        }
     }
 
     /**
